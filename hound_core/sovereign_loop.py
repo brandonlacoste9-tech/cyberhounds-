@@ -2,17 +2,25 @@
 """
 🐺 CYBERHOUND SOVEREIGN LOOP v2.0
 B2B Compliance Hunting with Human-on-the-Loop (HOTL)
-REAL leads only - no simulation.
+REAL leads only - no simulation, no fake data.
 """
 
 import asyncio
 import json
 import logging
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional
 
-from swarm import Swarm, Lead
+try:
+    from swarm import Swarm, Lead
+except ImportError as e:
+    print(f"❌ Import error: {e}")
+    print("Install dependencies: pip install -r requirements.txt")
+    sys.exit(1)
+
+from target_discovery import TargetDiscovery
 
 # Configuration
 CYCLE_INTERVAL_SECONDS = 30 * 60  # 30 minutes between hunts
@@ -37,8 +45,6 @@ class DecisionPack:
         self.pack_id = f"PACK_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{lead.company[:8].upper()}"
         self.lead = lead
         self.forge_timestamp = datetime.now().isoformat()
-        
-        # Calculate pricing based on risk
         self._calculate_price()
     
     def _calculate_price(self):
@@ -77,36 +83,11 @@ class SovereignLoop:
     """Master controller for REAL B2B compliance hunting."""
     
     def __init__(self):
-        self.swarm = Swarm()
+        self.swarm = None  # Initialized per-cycle to handle errors
         self.pending_strikes: List[Dict] = []
         self.settled_strikes: List[Dict] = []
+        self.discovery = TargetDiscovery()
         self.load_data()
-        self._ensure_targets_file()
-    
-    def _ensure_targets_file(self):
-        """Create targets file if it doesn't exist."""
-        if not TARGETS_FILE.exists():
-            default_targets = """# Add B2B prospect domains here (one per line)
-# Example:
-# fintech-startup.com
-# healthapp.io
-# saas-company.ca
-"""
-            TARGETS_FILE.write_text(default_targets)
-            logger.info(f"📝 Created {TARGETS_FILE} - add your targets there")
-    
-    def load_targets(self) -> List[str]:
-        """Load target domains from file."""
-        if not TARGETS_FILE.exists():
-            return []
-        
-        lines = TARGETS_FILE.read_text().strip().split('\n')
-        targets = [
-            line.strip() 
-            for line in lines 
-            if line.strip() and not line.startswith('#')
-        ]
-        return targets
     
     def load_data(self):
         """Load persisted hunting data."""
@@ -125,43 +106,57 @@ class SovereignLoop:
             json.dump(self.settled_strikes, f, indent=2)
     
     async def run_hunt_cycle(self) -> List[DecisionPack]:
-        """
-        Run one complete hunt cycle:
-        1. Load targets
-        2. Deploy swarm
-        3. Forge Decision Packs
-        4. Queue for approval
-        """
-        targets = self.load_targets()
+        """Run one complete hunt cycle on REAL targets."""
+        targets = self.discovery.load_and_validate_targets()
         
         if not targets:
-            logger.warning("⚠️  No targets in targets.txt - add domains to hunt")
+            logger.error("="*70)
+            logger.error("❌ NO TARGETS CONFIGURED")
+            logger.error("="*70)
+            logger.error("")
+            logger.error("Add real B2B domains to: hound_core/data/targets.txt")
+            logger.error("")
+            logger.error("Run this for prospecting guidance:")
+            logger.error("  python target_discovery.py")
+            logger.error("")
+            logger.error("="*70)
             return []
         
-        logger.info(f"🎯 Hunting {len(targets)} targets")
+        logger.info(f"🎯 Hunting {len(targets)} REAL targets")
         
+        # Initialize swarm fresh each cycle (handles connection issues)
+        self.swarm = Swarm()
         all_packs = []
         
-        for target in targets:
-            # Deploy swarm on this target
-            leads = await self.swarm.hunt_target(target)
-            
-            # Forge Decision Packs for each lead
-            for lead in leads:
-                pack = DecisionPack(lead)
-                all_packs.append(pack)
+        async with self.swarm.scraper:
+            for i, target in enumerate(targets, 1):
+                logger.info(f"\n[{i}/{len(targets)}] Hunting {target}...")
                 
-                # Add to pending
-                self.pending_strikes.append(pack.to_dict())
+                try:
+                    # Deploy swarm on this target
+                    leads = await self.swarm.hunt_target(target)
+                    
+                    # Forge Decision Packs for each lead
+                    for lead in leads:
+                        pack = DecisionPack(lead)
+                        all_packs.append(pack)
+                        
+                        # Add to pending
+                        self.pending_strikes.append(pack.to_dict())
+                        
+                        # Log the strike
+                        logger.info(f"🔨 FORGED: {pack.pack_id}")
+                        logger.info(f"   Company: {pack.lead.company}")
+                        logger.info(f"   Gap: {pack.lead.description[:60]}...")
+                        logger.info(f"   Price: ${pack.proposed_price:,} | ROI: {pack.roi}")
+                        logger.info(f"   Confidence: {pack.lead.confidence:.0%}")
+                    
+                except Exception as e:
+                    logger.error(f"❌ Error hunting {target}: {e}")
                 
-                # Log the strike
-                logger.info(f"🔨 FORGED: {pack.pack_id}")
-                logger.info(f"   Company: {pack.lead.company}")
-                logger.info(f"   Gap: {pack.lead.description[:60]}...")
-                logger.info(f"   Price: ${pack.proposed_price:,} | ROI: {pack.roi}")
-            
-            # Small delay between targets
-            await asyncio.sleep(2)
+                # Small delay between targets (be polite)
+                if i < len(targets):
+                    await asyncio.sleep(2)
         
         self.save_data()
         return all_packs
@@ -191,23 +186,37 @@ class SovereignLoop:
             print(f"      {pack.lead.company} | {pack.lead.gap_type.upper()}")
             print(f"      ${pack.proposed_price:,} deal | {pack.roi} ROI | {pack.lead.confidence:.0%} confidence")
         
-        print("\n💬 Approve via Telegram or update pending_strikes.json")
+        print("\n💬 Approve via Telegram or edit pending_strikes.json")
         print("="*70 + "\n")
     
     async def sovereign_loop(self):
-        """Main hunting loop - runs forever."""
+        """Main hunting loop - runs forever on REAL targets."""
         logger.info("="*70)
         logger.info("🐺 CYBERHOUND SOVEREIGN LOOP v2.0")
         logger.info("   B2B Compliance Hunting | Human-on-the-Loop")
-        logger.info("   REAL scrapers | NO simulated data")
+        logger.info("   REAL scrapers | REAL targets | NO fake data")
         logger.info("="*70)
         
-        targets = self.load_targets()
-        logger.info(f"📁 Loaded {len(targets)} targets from targets.txt")
+        # Check for targets before starting
+        targets = self.discovery.load_and_validate_targets()
         
         if not targets:
-            logger.error("❌ No targets configured! Add domains to data/targets.txt")
+            print("\n" + "="*70)
+            print("🚨 CANNOT START: No targets configured")
+            print("="*70)
+            print("\nStep 1: Create your target list")
+            print("  Edit: hound_core/data/targets.txt")
+            print("\nStep 2: Add real B2B domains (one per line)")
+            print("  Example:")
+            print("    stripe.com")
+            print("    plaid.com")
+            print("    your-prospect.com")
+            print("\nStep 3: Get prospecting help")
+            print("  python target_discovery.py")
+            print("="*70)
             return
+        
+        logger.info(f"📁 Loaded {len(targets)} targets from targets.txt")
         
         cycle = 0
         while True:
@@ -242,6 +251,8 @@ class SovereignLoop:
                 
             except Exception as e:
                 logger.error(f"❌ Hunt cycle failed: {e}")
+                import traceback
+                logger.error(traceback.format_exc())
             
             # Sleep until next cycle
             logger.info(f"💤 Sleeping {CYCLE_INTERVAL_SECONDS/60} minutes until next hunt...")
@@ -249,20 +260,38 @@ class SovereignLoop:
 
 
 async def quick_hunt(domains: List[str]):
-    """One-off hunt for specific domains."""
-    logger.info("🐺 QUICK HUNT MODE")
+    """One-off hunt for specific domains - REAL scrapes."""
+    logger.info("🐺 QUICK HUNT MODE - REAL SCRAPING")
     
     sovereign = SovereignLoop()
     
-    # Temporarily override targets
-    sovereign.swarm = Swarm()
+    # Validate domains
+    valid_domains = [d for d in domains if sovereign.discovery.validate_domain(d)]
+    invalid = set(domains) - set(valid_domains)
     
+    if invalid:
+        logger.warning(f"⚠️  Invalid domains skipped: {invalid}")
+    
+    if not valid_domains:
+        logger.error("❌ No valid domains to hunt")
+        return
+    
+    logger.info(f"🎯 Hunting {len(valid_domains)} domains")
+    
+    # Initialize swarm
+    sovereign.swarm = Swarm()
     all_packs = []
-    for domain in domains:
-        leads = await sovereign.swarm.hunt_target(domain)
-        for lead in leads:
-            pack = DecisionPack(lead)
-            all_packs.append(pack)
+    
+    async with sovereign.swarm.scraper:
+        for domain in valid_domains:
+            logger.info(f"\n🎯 Hunting {domain}...")
+            try:
+                leads = await sovereign.swarm.hunt_target(domain)
+                for lead in leads:
+                    pack = DecisionPack(lead)
+                    all_packs.append(pack)
+            except Exception as e:
+                logger.error(f"❌ Error with {domain}: {e}")
     
     sovereign.print_strike_board(all_packs)
     
@@ -270,7 +299,7 @@ async def quick_hunt(domains: List[str]):
     butin = {
         "mode": "quick_hunt",
         "timestamp": datetime.now().isoformat(),
-        "targets": domains,
+        "targets": valid_domains,
         "strikes": [p.to_dict() for p in all_packs]
     }
     
@@ -279,19 +308,32 @@ async def quick_hunt(domains: List[str]):
         json.dump(butin, f, indent=2)
     
     logger.info(f"💾 Results saved to {BUTIN_PATH}")
-
-
-if __name__ == "__main__":
-    import sys
     
-    if len(sys.argv) > 1 and sys.argv[1] == "--quick":
-        # Quick hunt mode: python sovereign_loop.py --quick domain1.com domain2.com
-        domains = sys.argv[2:]
-        if domains:
-            asyncio.run(quick_hunt(domains))
-        else:
-            print("Usage: python sovereign_loop.py --quick domain1.com domain2.com")
+    return all_packs
+
+
+def main():
+    """Entry point with argument parsing."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='🐺 Cyberhound B2B Compliance Hunter')
+    parser.add_argument('--quick', nargs='+', help='Quick hunt specific domains')
+    parser.add_argument('--discover', action='store_true', help='Show prospecting guide')
+    
+    args = parser.parse_args()
+    
+    if args.discover:
+        # Just show prospecting guide
+        discovery = TargetDiscovery()
+        print(discovery.generate_prospecting_report())
+    elif args.quick:
+        # Quick hunt mode
+        asyncio.run(quick_hunt(args.quick))
     else:
         # Full sovereign loop
         sovereign = SovereignLoop()
         asyncio.run(sovereign.sovereign_loop())
+
+
+if __name__ == "__main__":
+    main()
