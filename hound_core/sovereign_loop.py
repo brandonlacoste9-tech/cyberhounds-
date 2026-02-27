@@ -1,39 +1,52 @@
 #!/usr/bin/env python3
 """
-🐺 CYBERHOUND SOVEREIGN LOOP v2.0
+🐺 CYBERHOUND SOVEREIGN LOOP v2.1
 B2B Compliance Hunting with Human-on-the-Loop (HOTL)
 REAL leads only - no simulation, no fake data.
+
+Features:
+- Real HTTP scraping with rate limiting
+- Telegram HOTL integration (optional)
+- Enhanced error handling
+- Comprehensive logging
 """
 
 import asyncio
 import json
 import logging
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional
 
 try:
-    from swarm import Swarm, Lead
+    from swarm import Swarm, Lead, DEFAULT_DELAY_BETWEEN_REQUESTS
+    from target_discovery import TargetDiscovery
+    from envoy_bot import EnvoyBot, ConsoleNotifier, TelegramConfig
 except ImportError as e:
     print(f"❌ Import error: {e}")
     print("Install dependencies: pip install -r requirements.txt")
     sys.exit(1)
 
-from target_discovery import TargetDiscovery
-
 # Configuration
-CYCLE_INTERVAL_SECONDS = 30 * 60  # 30 minutes between hunts
+CYCLE_INTERVAL_SECONDS = int(os.getenv("CYCLE_INTERVAL", "1800"))  # 30 min default
 DATA_DIR = Path(__file__).parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 BUTIN_PATH = DATA_DIR / "LE_BUTIN.json"
 PENDING_PATH = DATA_DIR / "pending_strikes.json"
 SETTLED_PATH = DATA_DIR / "settled_strikes.json"
 TARGETS_FILE = DATA_DIR / "targets.txt"
+LOG_FILE = DATA_DIR / "sovereign.log"
 
+# Setup logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s | %(name)s | %(levelname)s | %(message)s'
+    format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE),
+        logging.StreamHandler()
+    ]
 )
 logger = logging.getLogger("Sovereign")
 
@@ -82,28 +95,75 @@ class DecisionPack:
 class SovereignLoop:
     """Master controller for REAL B2B compliance hunting."""
     
-    def __init__(self):
-        self.swarm = None  # Initialized per-cycle to handle errors
+    def __init__(self, rate_limit_delay: float = DEFAULT_DELAY_BETWEEN_REQUESTS):
+        self.rate_limit_delay = rate_limit_delay
+        self.swarm: Optional[Swarm] = None
         self.pending_strikes: List[Dict] = []
         self.settled_strikes: List[Dict] = []
         self.discovery = TargetDiscovery()
+        self.telegram_bot: Optional[EnvoyBot] = None
+        self.console_notifier = ConsoleNotifier()
         self.load_data()
     
+    async def initialize(self) -> bool:
+        """Initialize the sovereign loop and its components."""
+        logger.info("🔧 Initializing Sovereign Loop...")
+        
+        # Initialize Telegram bot (optional)
+        try:
+            self.telegram_bot = await EnvoyBot.create_notifier()
+            if self.telegram_bot and self.telegram_bot.config.enabled:
+                await self.telegram_bot.start_polling()
+        except Exception as e:
+            logger.warning(f"⚠️  Telegram bot initialization failed: {e}")
+            logger.info("ℹ️  Continuing without Telegram (console notifications only)")
+        
+        # Initialize swarm
+        self.swarm = Swarm(delay=self.rate_limit_delay)
+        
+        logger.info("✅ Sovereign Loop initialized")
+        return True
+    
+    async def shutdown(self):
+        """Graceful shutdown."""
+        logger.info("🛑 Shutting down...")
+        if self.telegram_bot:
+            await self.telegram_bot.stop()
+        logger.info("✅ Shutdown complete")
+    
     def load_data(self):
-        """Load persisted hunting data."""
-        if PENDING_PATH.exists():
-            with open(PENDING_PATH) as f:
-                self.pending_strikes = json.load(f)
-        if SETTLED_PATH.exists():
-            with open(SETTLED_PATH) as f:
-                self.settled_strikes = json.load(f)
+        """Load persisted hunting data with error handling."""
+        try:
+            if PENDING_PATH.exists():
+                with open(PENDING_PATH, 'r', encoding='utf-8') as f:
+                    self.pending_strikes = json.load(f)
+                logger.debug(f"📂 Loaded {len(self.pending_strikes)} pending strikes")
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ Failed to parse pending_strikes.json: {e}")
+            self.pending_strikes = []
+        except Exception as e:
+            logger.error(f"❌ Failed to load pending strikes: {e}")
+            self.pending_strikes = []
+        
+        try:
+            if SETTLED_PATH.exists():
+                with open(SETTLED_PATH, 'r', encoding='utf-8') as f:
+                    self.settled_strikes = json.load(f)
+                logger.debug(f"📂 Loaded {len(self.settled_strikes)} settled strikes")
+        except Exception as e:
+            logger.error(f"❌ Failed to load settled strikes: {e}")
+            self.settled_strikes = []
     
     def save_data(self):
-        """Persist hunting data."""
-        with open(PENDING_PATH, 'w') as f:
-            json.dump(self.pending_strikes, f, indent=2)
-        with open(SETTLED_PATH, 'w') as f:
-            json.dump(self.settled_strikes, f, indent=2)
+        """Persist hunting data with error handling."""
+        try:
+            with open(PENDING_PATH, 'w', encoding='utf-8') as f:
+                json.dump(self.pending_strikes, f, indent=2)
+            with open(SETTLED_PATH, 'w', encoding='utf-8') as f:
+                json.dump(self.settled_strikes, f, indent=2)
+            logger.debug("💾 Data saved successfully")
+        except Exception as e:
+            logger.error(f"❌ Failed to save data: {e}")
     
     async def run_hunt_cycle(self) -> List[DecisionPack]:
         """Run one complete hunt cycle on REAL targets."""
@@ -124,8 +184,6 @@ class SovereignLoop:
         
         logger.info(f"🎯 Hunting {len(targets)} REAL targets")
         
-        # Initialize swarm fresh each cycle (handles connection issues)
-        self.swarm = Swarm()
         all_packs = []
         
         async with self.swarm.scraper:
@@ -138,28 +196,51 @@ class SovereignLoop:
                     
                     # Forge Decision Packs for each lead
                     for lead in leads:
-                        pack = DecisionPack(lead)
-                        all_packs.append(pack)
-                        
-                        # Add to pending
-                        self.pending_strikes.append(pack.to_dict())
-                        
-                        # Log the strike
-                        logger.info(f"🔨 FORGED: {pack.pack_id}")
-                        logger.info(f"   Company: {pack.lead.company}")
-                        logger.info(f"   Gap: {pack.lead.description[:60]}...")
-                        logger.info(f"   Price: ${pack.proposed_price:,} | ROI: {pack.roi}")
-                        logger.info(f"   Confidence: {pack.lead.confidence:.0%}")
+                        try:
+                            pack = DecisionPack(lead)
+                            all_packs.append(pack)
+                            
+                            # Add to pending
+                            self.pending_strikes.append(pack.to_dict())
+                            
+                            # Log the strike
+                            logger.info(f"🔨 FORGED: {pack.pack_id}")
+                            logger.info(f"   Company: {pack.lead.company}")
+                            logger.info(f"   Gap: {pack.lead.description[:60]}...")
+                            logger.info(f"   Price: ${pack.proposed_price:,} | ROI: {pack.roi}")
+                            logger.info(f"   Confidence: {pack.lead.confidence:.0%}")
+                            
+                            # Send notification
+                            await self._notify_decision_pack(pack.to_dict())
+                            
+                        except Exception as e:
+                            logger.error(f"❌ Error forging pack for {lead.company}: {e}")
                     
                 except Exception as e:
                     logger.error(f"❌ Error hunting {target}: {e}")
+                    import traceback
+                    logger.debug(traceback.format_exc())
                 
-                # Small delay between targets (be polite)
-                if i < len(targets):
-                    await asyncio.sleep(2)
+                # Progress update
+                logger.info(f"📊 Progress: {i}/{len(targets)} targets processed")
         
         self.save_data()
         return all_packs
+    
+    async def _notify_decision_pack(self, pack: Dict):
+        """Send notification via Telegram or console."""
+        try:
+            if self.telegram_bot and self.telegram_bot.config.enabled:
+                success = await self.telegram_bot.send_decision_pack(pack)
+                if not success:
+                    # Fallback to console
+                    self.console_notifier.send_decision_pack(pack)
+            else:
+                self.console_notifier.send_decision_pack(pack)
+        except Exception as e:
+            logger.error(f"❌ Notification error: {e}")
+            # Always show in console as fallback
+            self.console_notifier.send_decision_pack(pack)
     
     def print_strike_board(self, packs: List[DecisionPack]):
         """Print summary of forged strikes."""
@@ -192,9 +273,9 @@ class SovereignLoop:
     async def sovereign_loop(self):
         """Main hunting loop - runs forever on REAL targets."""
         logger.info("="*70)
-        logger.info("🐺 CYBERHOUND SOVEREIGN LOOP v2.0")
+        logger.info("🐺 CYBERHOUND SOVEREIGN LOOP v2.1")
         logger.info("   B2B Compliance Hunting | Human-on-the-Loop")
-        logger.info("   REAL scrapers | REAL targets | NO fake data")
+        logger.info("   REAL scrapers | Rate limited | Error handled")
         logger.info("="*70)
         
         # Check for targets before starting
@@ -217,6 +298,17 @@ class SovereignLoop:
             return
         
         logger.info(f"📁 Loaded {len(targets)} targets from targets.txt")
+        
+        # Setup graceful shutdown
+        import signal
+        
+        def signal_handler(sig, frame):
+            logger.info("🛑 Shutdown signal received")
+            asyncio.create_task(self.shutdown())
+            sys.exit(0)
+        
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
         
         cycle = 0
         while True:
@@ -244,10 +336,12 @@ class SovereignLoop:
                     "latest_strikes": [p.to_dict() for p in packs]
                 }
                 
-                with open(BUTIN_PATH, 'w') as f:
-                    json.dump(butin, f, indent=2)
-                
-                logger.info(f"💾 LE_BUTIN updated: {BUTIN_PATH}")
+                try:
+                    with open(BUTIN_PATH, 'w', encoding='utf-8') as f:
+                        json.dump(butin, f, indent=2)
+                    logger.info(f"💾 LE_BUTIN updated: {BUTIN_PATH}")
+                except Exception as e:
+                    logger.error(f"❌ Failed to write LE_BUTIN: {e}")
                 
             except Exception as e:
                 logger.error(f"❌ Hunt cycle failed: {e}")
@@ -259,27 +353,34 @@ class SovereignLoop:
             await asyncio.sleep(CYCLE_INTERVAL_SECONDS)
 
 
-async def quick_hunt(domains: List[str]):
+async def quick_hunt(domains: List[str], rate_limit: float = 0.5):
     """One-off hunt for specific domains - REAL scrapes."""
     logger.info("🐺 QUICK HUNT MODE - REAL SCRAPING")
     
-    sovereign = SovereignLoop()
+    sovereign = SovereignLoop(rate_limit_delay=rate_limit)
+    await sovereign.initialize()
     
     # Validate domains
-    valid_domains = [d for d in domains if sovereign.discovery.validate_domain(d)]
-    invalid = set(domains) - set(valid_domains)
+    valid_domains = []
+    invalid_domains = []
     
-    if invalid:
-        logger.warning(f"⚠️  Invalid domains skipped: {invalid}")
+    for domain in domains:
+        if sovereign.discovery.validate_domain(domain):
+            clean = domain.replace('https://', '').replace('http://', '').replace('www/', '')
+            clean = clean.rstrip('/')
+            valid_domains.append(clean)
+        else:
+            invalid_domains.append(domain)
+    
+    if invalid_domains:
+        logger.warning(f"⚠️  Invalid domains skipped: {invalid_domains}")
     
     if not valid_domains:
         logger.error("❌ No valid domains to hunt")
-        return
+        return []
     
     logger.info(f"🎯 Hunting {len(valid_domains)} domains")
     
-    # Initialize swarm
-    sovereign.swarm = Swarm()
     all_packs = []
     
     async with sovereign.swarm.scraper:
@@ -288,8 +389,13 @@ async def quick_hunt(domains: List[str]):
             try:
                 leads = await sovereign.swarm.hunt_target(domain)
                 for lead in leads:
-                    pack = DecisionPack(lead)
-                    all_packs.append(pack)
+                    try:
+                        pack = DecisionPack(lead)
+                        all_packs.append(pack)
+                        sovereign.pending_strikes.append(pack.to_dict())
+                        await sovereign._notify_decision_pack(pack.to_dict())
+                    except Exception as e:
+                        logger.error(f"❌ Error processing lead: {e}")
             except Exception as e:
                 logger.error(f"❌ Error with {domain}: {e}")
     
@@ -303,12 +409,15 @@ async def quick_hunt(domains: List[str]):
         "strikes": [p.to_dict() for p in all_packs]
     }
     
-    DATA_DIR.mkdir(exist_ok=True)
-    with open(BUTIN_PATH, 'w') as f:
-        json.dump(butin, f, indent=2)
+    try:
+        DATA_DIR.mkdir(exist_ok=True)
+        with open(BUTIN_PATH, 'w', encoding='utf-8') as f:
+            json.dump(butin, f, indent=2)
+        logger.info(f"💾 Results saved to {BUTIN_PATH}")
+    except Exception as e:
+        logger.error(f"❌ Failed to save results: {e}")
     
-    logger.info(f"💾 Results saved to {BUTIN_PATH}")
-    
+    await sovereign.shutdown()
     return all_packs
 
 
@@ -316,23 +425,51 @@ def main():
     """Entry point with argument parsing."""
     import argparse
     
-    parser = argparse.ArgumentParser(description='🐺 Cyberhound B2B Compliance Hunter')
+    parser = argparse.ArgumentParser(
+        description='🐺 Cyberhound B2B Compliance Hunter',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Run full sovereign loop (every 30 min)
+  python sovereign_loop.py
+  
+  # Quick hunt specific domains
+  python sovereign_loop.py --quick stripe.com plaid.com
+  
+  # Fast hunt (no rate limiting - be careful!)
+  python sovereign_loop.py --quick stripe.com --fast
+  
+  # Show prospecting guide
+  python sovereign_loop.py --discover
+  
+Environment Variables:
+  TELEGRAM_BOT_TOKEN    Telegram bot token for HOTL
+  TELEGRAM_CHAT_ID      Telegram chat ID for notifications
+  CYCLE_INTERVAL        Seconds between hunt cycles (default: 1800)
+        """
+    )
+    
     parser.add_argument('--quick', nargs='+', help='Quick hunt specific domains')
+    parser.add_argument('--fast', action='store_true', help='Disable rate limiting (careful!)')
     parser.add_argument('--discover', action='store_true', help='Show prospecting guide')
+    parser.add_argument('--version', action='version', version='Cyberhound v2.1')
     
     args = parser.parse_args()
     
     if args.discover:
-        # Just show prospecting guide
         discovery = TargetDiscovery()
         print(discovery.generate_prospecting_report())
     elif args.quick:
-        # Quick hunt mode
-        asyncio.run(quick_hunt(args.quick))
+        rate_limit = 0.0 if args.fast else DEFAULT_DELAY_BETWEEN_REQUESTS
+        if args.fast:
+            logger.warning("⚠️  Fast mode enabled - no rate limiting!")
+        asyncio.run(quick_hunt(args.quick, rate_limit))
     else:
-        # Full sovereign loop
         sovereign = SovereignLoop()
-        asyncio.run(sovereign.sovereign_loop())
+        try:
+            asyncio.run(sovereign.sovereign_loop())
+        except KeyboardInterrupt:
+            logger.info("👋 Goodbye!")
 
 
 if __name__ == "__main__":

@@ -28,7 +28,19 @@ httpx[http2]>=0.24.0
 # Monitoring
 prometheus-client>=0.17.0
 
-# Testing (dev only)
+# ========== DEVELOPMENT / TESTING ==========
+
+# Testing framework
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
 aioresponses>=0.7.4
+
+# Linting and formatting
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0
+
+# Type stubs
+mypy-extensions>=1.0.0
+types-aiofiles>=23.0.0
