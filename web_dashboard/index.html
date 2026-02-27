@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐺 Cyberhound B2B</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0f;
+            color: #00ff88;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            padding: 40px 0;
+            border-bottom: 2px solid #00ff88;
+            margin-bottom: 30px;
+        }
+        h1 {
+            font-size: 3em;
+            text-shadow: 0 0 20px #00ff88;
+        }
+        .tagline {
+            color: #888;
+            margin-top: 10px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #111;
+            border: 1px solid #00ff88;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        .stat-label {
+            color: #888;
+            text-transform: uppercase;
+            font-size: 0.8em;
+        }
+        .leads-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .leads-table th,
+        .leads-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #222;
+        }
+        .leads-table th {
+            background: #111;
+            color: #00ff88;
+            text-transform: uppercase;
+        }
+        .leads-table tr:hover {
+            background: #111;
+        }
+        .severity-CRITICAL { color: #ff4444; }
+        .severity-HIGH { color: #ff8844; }
+        .severity-MEDIUM { color: #ffaa44; }
+        .btn {
+            background: transparent;
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn:hover {
+            background: #00ff88;
+            color: #000;
+        }
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #111;
+            border-top: 1px solid #00ff88;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00ff88;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐺 CYBERHOUND</h1>
+            <p class="tagline">B2B Compliance Gap Hunting | $5K-25K Deals</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="pending-count">0</div>
+                <div class="stat-label">Pending Strikes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="settled-count">0</div>
+                <div class="stat-label">Settled Deals</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="revenue">$0</div>
+                <div class="stat-label">Pipeline Value</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="hounds-active">20</div>
+                <div class="stat-label">Hounds Active</div>
+            </div>
+        </div>
+
+        <h2 style="margin-bottom: 20px;">📋 LE_BUTIN (Live Leads)</h2>
+        <table class="leads-table">
+            <thead>
+                <tr>
+                    <th>Company</th>
+                    <th>Gap Type</th>
+                    <th>Risk</th>
+                    <th>Price</th>
+                    <th>ROI</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="leads-body">
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #666;">Loading leads...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="status-bar">
+        <span><span class="status-indicator"></span> Sovereign Loop: RUNNING</span>
+        <span>Last Hunt: <span id="last-hunt">--</span></span>
+    </div>
+
+    <script>
+        // Mock data - replace with API call to hound_core/data/LE_BUTIN.json
+        const mockLeads = [
+            {
+                company: "FinTech Startup Inc",
+                gap_type: "bill_96",
+                description: "AI system not disclosed",
+                fine_risk: 50000,
+                proposed_price: 15000,
+                roi: "3.3x",
+                status: "PENDING_APPROVAL",
+                severity: "CRITICAL"
+            },
+            {
+                company: "HealthApp Co",
+                gap_type: "loi_25",
+                description: "Missing DPO",
+                fine_risk: 25000,
+                proposed_price: 12000,
+                roi: "2.1x",
+                status: "PENDING_APPROVAL",
+                severity: "HIGH"
+            },
+            {
+                company: "E-Commerce CA",
+                gap_type: "ccpa",
+                description: "No opt-out link",
+                fine_risk: 7500,
+                proposed_price: 5000,
+                roi: "1.5x",
+                status: "APPROVED",
+                severity: "MEDIUM"
+            }
+        ];
+
+        function formatCurrency(value) {
+            return '$' + value.toLocaleString();
+        }
+
+        function renderLeads() {
+            const tbody = document.getElementById('leads-body');
+            tbody.innerHTML = mockLeads.map(lead => `
+                <tr>
+                    <td>${lead.company}</td>
+                    <td>${lead.gap_type.toUpperCase()}</td>
+                    <td class="severity-${lead.severity}">${formatCurrency(lead.fine_risk)}</td>
+                    <td>${formatCurrency(lead.proposed_price)}</td>
+                    <td>${lead.roi}</td>
+                    <td>${lead.status}</td>
+                    <td><button class="btn">View</button></td>
+                </tr>
+            `).join('');
+
+            // Update stats
+            const pending = mockLeads.filter(l => l.status === 'PENDING_APPROVAL').length;
+            const settled = mockLeads.filter(l => l.status === 'APPROVED').length;
+            const revenue = mockLeads.reduce((sum, l) => sum + l.proposed_price, 0);
+
+            document.getElementById('pending-count').textContent = pending;
+            document.getElementById('settled-count').textContent = settled;
+            document.getElementById('revenue').textContent = formatCurrency(revenue);
+            document.getElementById('last-hunt').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Initial render
+        renderLeads();
+
+        // Refresh every 30 seconds
+        setInterval(renderLeads, 30000);
+    </script>
+</body>
+</html>
