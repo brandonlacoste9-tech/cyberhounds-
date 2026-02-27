@@ -132,6 +132,7 @@ make quick
 
 ## Contact
 
+**Email:** northern-ventures@outlook.com  
 **Partnerships:** Open for white-label, integration, and resale partnerships  
 **Investment:** Seed round ($250K) for sales team expansion  
 **Demo:** Run `make quick` to see it in action

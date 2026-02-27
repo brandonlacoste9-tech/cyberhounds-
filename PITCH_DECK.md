@@ -182,4 +182,5 @@
 
 **Repository:** github.com/brandonlacoste9-tech/cyberhounds-  
 **Demo:** `make quick` (30 seconds to first lead)  
-**Contact:** Open for investment & partnerships
+**Email:** northern-ventures@outlook.com  
+**Status:** Open for investment & partnerships

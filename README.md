@@ -298,3 +298,11 @@ python sovereign_loop.py --version
 ---
 
 **The better system. No old deal hunter code. Clean B2B hunting.**
+
+---
+
+## 📧 Contact
+
+**Email:** northern-ventures@outlook.com  
+**Partnerships:** Open for white-label, integration, and resale  
+**Investment:** Seed round ($250K) - [See Executive Summary](EXECUTIVE_SUMMARY.md)

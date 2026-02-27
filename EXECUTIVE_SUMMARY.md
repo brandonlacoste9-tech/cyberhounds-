@@ -125,6 +125,7 @@ Automated lead generation for $5K-25K compliance projects
 ## Contact
 
 **Repository:** https://github.com/brandonlacoste9-tech/cyberhounds-  
+**Email:** northern-ventures@outlook.com  
 **Status:** Open for partnerships & investment
 
 ---
