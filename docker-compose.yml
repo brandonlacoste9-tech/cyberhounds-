@@ -1,0 +1,69 @@
+# 🐺 CYBERHOUND DOCKER COMPOSE
+# Local development and production orchestration
+
+version: '3.8'
+
+services:
+  # Main hunting service
+  hunter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cyberhound-hunter
+    volumes:
+      - ./hound_core/data:/app/hound_core/data
+      - ./.env:/app/.env:ro
+    environment:
+      - DATA_DIR=/app/hound_core/data
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.path.insert(0, 'hound_core'); from health_check import check_health; r = check_health(); sys.exit(0 if r['healthy'] else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command: ["-m", "hound_core.cron_hunt"]
+
+  # Optional: Web dashboard
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cyberhound-dashboard
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./hound_core/data:/app/hound_core/data:ro
+    working_dir: /app/web_dashboard
+    command: ["-m", "http.server", "8080"]
+    restart: unless-stopped
+    depends_on:
+      - hunter
+
+  # Optional: Redis for distributed queue (future scaling)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: cyberhound-redis
+  #   volumes:
+  #     - redis_data:/data
+  #   restart: unless-stopped
+
+  # Optional: PostgreSQL for production database
+  # db:
+  #   image: postgres:15-alpine
+  #   container_name: cyberhound-db
+  #   environment:
+  #     POSTGRES_USER: cyberhound
+  #     POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+  #     POSTGRES_DB: cyberhound
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+
+# volumes:
+#   redis_data:
+#   postgres_data:
+
+networks:
+  default:
+    name: cyberhound-network
