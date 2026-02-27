@@ -3,360 +3,1007 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🐺 Cyberhound B2B</title>
+    <title>🐺 Cyberhound Dashboard</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #111118;
+            --bg-hover: #1a1a24;
+            --primary: #00ff88;
+            --primary-dim: #00cc6a;
+            --danger: #ff4444;
+            --warning: #ffaa00;
+            --info: #00aaff;
+            --text: #e0e0e0;
+            --text-muted: #888;
+            --border: #222;
+        }
+        
         body {
-            font-family: 'Courier New', monospace;
-            background: #0a0a0f;
-            color: #00ff88;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
             min-height: 100vh;
+            line-height: 1.6;
         }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-            padding-bottom: 60px;
-        }
-        header {
-            text-align: center;
-            padding: 40px 0;
-            border-bottom: 2px solid #00ff88;
-            margin-bottom: 30px;
-        }
-        h1 {
-            font-size: 3em;
-            text-shadow: 0 0 20px #00ff88;
-        }
-        .tagline {
-            color: #888;
-            margin-top: 10px;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-card {
-            background: #111;
-            border: 1px solid #00ff88;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .stat-value {
-            font-size: 2.5em;
-            font-weight: bold;
-        }
-        .stat-label {
-            color: #888;
-            text-transform: uppercase;
-            font-size: 0.8em;
-            margin-top: 5px;
-        }
-        .leads-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 0.9em;
-        }
-        .leads-table th,
-        .leads-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #222;
-        }
-        .leads-table th {
-            background: #111;
-            color: #00ff88;
-            text-transform: uppercase;
-            font-size: 0.8em;
-        }
-        .leads-table tr:hover {
-            background: #111;
-        }
-        .severity-CRITICAL { color: #ff4444; font-weight: bold; }
-        .severity-HIGH { color: #ff8844; }
-        .severity-MEDIUM { color: #ffaa44; }
-        .severity-LOW { color: #88ff88; }
-        .btn {
-            background: transparent;
-            border: 1px solid #00ff88;
-            color: #00ff88;
-            padding: 6px 12px;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.8em;
-        }
-        .btn:hover {
-            background: #00ff88;
-            color: #000;
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.75em;
-            text-transform: uppercase;
-        }
-        .status-PENDING { background: #ff880033; color: #ff8844; border: 1px solid #ff8844; }
-        .status-APPROVED { background: #00ff8833; color: #00ff88; border: 1px solid #00ff88; }
-        .status-VETOED { background: #ff444433; color: #ff4444; border: 1px solid #ff4444; }
-        .status-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #111;
-            border-top: 1px solid #00ff88;
-            padding: 10px 20px;
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--bg-card) 0%, #0d1117 100%);
+            border-bottom: 2px solid var(--primary);
+            padding: 1.5rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .logo-icon {
+            font-size: 2rem;
+        }
+        
+        .logo-text h1 {
+            font-size: 1.5rem;
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        .logo-text p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 2rem;
+            font-size: 0.875rem;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-            background: #00ff88;
+            background: var(--primary);
             animation: pulse 2s infinite;
-            margin-right: 8px;
         }
+        
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--primary);
+            background: transparent;
+            color: var(--primary);
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn:hover {
+            background: var(--primary);
+            color: var(--bg-dark);
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: var(--bg-dark);
+            font-weight: 600;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dim);
+        }
+        
+        .btn-danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background: var(--danger);
+            color: white;
+        }
+        
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+        }
+        
+        .stat-card.warning::before { background: var(--warning); }
+        .stat-card.danger::before { background: var(--danger); }
+        .stat-card.info::before { background: var(--info); }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+        
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .stat-icon {
+            font-size: 1.5rem;
+            opacity: 0.5;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        
+        .stat-change {
+            font-size: 0.875rem;
+            color: var(--primary);
+            margin-top: 0.25rem;
+        }
+        
+        /* Filters */
+        .filters {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .filter-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+        
+        select, input[type="text"] {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        /* Table */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+        
+        .table-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .table-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+        
+        .table-count {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            text-align: left;
+            padding: 1rem 1.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        th:hover {
+            color: var(--primary);
+        }
+        
+        th.sortable::after {
+            content: ' ↕';
+            opacity: 0.3;
+        }
+        
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.875rem;
+        }
+        
+        tr:hover {
+            background: var(--bg-hover);
+        }
+        
+        .company-cell {
+            font-weight: 600;
+        }
+        
+        .gap-type {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .gap-loi_25 { background: rgba(0, 170, 255, 0.2); color: var(--info); }
+        .gap-bill_96 { background: rgba(255, 68, 68, 0.2); color: var(--danger); }
+        .gap-ccpa { background: rgba(255, 170, 0, 0.2); color: var(--warning); }
+        .gap-gdpr { background: rgba(0, 255, 136, 0.2); color: var(--primary); }
+        
+        .severity {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-weight: 600;
+        }
+        
+        .severity-critical { color: var(--danger); }
+        .severity-high { color: var(--warning); }
+        .severity-medium { color: var(--text); }
+        
+        .price {
+            font-family: 'SF Mono', monospace;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .actions .btn {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+        
+        /* Empty State */
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
-            color: #666;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
         }
-        .empty-state h3 {
-            color: #888;
-            margin-bottom: 10px;
+        
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
         }
-        .refresh-btn {
+        
+        /* Modal */
+        .modal-overlay {
+            display: none;
             position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #00ff88;
-            color: #000;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            background: none;
             border: none;
-            padding: 10px 20px;
+            color: var(--text-muted);
+            font-size: 1.5rem;
             cursor: pointer;
-            font-family: inherit;
-            font-weight: bold;
+            padding: 0.25rem;
         }
+        
+        .modal-close:hover {
+            color: var(--text);
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .detail-label {
+            color: var(--text-muted);
+        }
+        
+        .detail-value {
+            font-weight: 500;
+            text-align: right;
+        }
+        
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+        
+        /* Loading */
         .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem;
+            gap: 0.75rem;
+            color: var(--text-muted);
         }
-        .error {
-            background: #ff444422;
-            border: 1px solid #ff4444;
-            color: #ff4444;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 4px;
+        
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1100;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+        
+        .toast.success { border-left-color: var(--primary); }
+        .toast.error { border-left-color: var(--danger); }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            th, td {
+                padding: 0.75rem;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
-    <button class="refresh-btn" onclick="loadData()">🔄 Refresh</button>
-    
-    <div class="container">
-        <header>
-            <h1>🐺 CYBERHOUND</h1>
-            <p class="tagline">B2B Compliance Gap Hunting | $5K-25K Deals</p>
-        </header>
+    <header class="header">
+        <div class="logo">
+            <span class="logo-icon">🐺</span>
+            <div class="logo-text">
+                <h1>CYBERHOUND</h1>
+                <p>B2B Compliance Hunting</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                <span id="system-status">Connecting...</span>
+            </div>
+            <button class="btn" onclick="refreshData()">🔄 Refresh</button>
+        </div>
+    </header>
 
+    <main class="container">
+        <!-- Stats Grid -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-value" id="pending-count">-</div>
-                <div class="stat-label">Pending Strikes</div>
+                <div class="stat-header">
+                    <span class="stat-label">Pipeline Value</span>
+                    <span class="stat-icon">💰</span>
+                </div>
+                <div class="stat-value" id="pipeline-value">$0</div>
+                <div class="stat-change">Total deal value</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="settled-count">-</div>
-                <div class="stat-label">Settled Deals</div>
+            
+            <div class="stat-card warning">
+                <div class="stat-header">
+                    <span class="stat-label">Pending Strikes</span>
+                    <span class="stat-icon">🎯</span>
+                </div>
+                <div class="stat-value" id="pending-count">0</div>
+                <div class="stat-change">Awaiting approval</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="pipeline-value">-</div>
-                <div class="stat-label">Pipeline</div>
+            
+            <div class="stat-card info">
+                <div class="stat-header">
+                    <span class="stat-label">Settled Deals</span>
+                    <span class="stat-icon">✅</span>
+                </div>
+                <div class="stat-value" id="settled-count">0</div>
+                <div class="stat-change">Closed this month</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="targets-hunted">-</div>
-                <div class="stat-label">Targets Hunted</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="cycle-num">-</div>
-                <div class="stat-label">Hunt Cycle</div>
+            
+            <div class="stat-card danger">
+                <div class="stat-header">
+                    <span class="stat-label">Critical Gaps</span>
+                    <span class="stat-icon">🚨</span>
+                </div>
+                <div class="stat-value" id="critical-count">0</div>
+                <div class="stat-change">Require immediate action</div>
             </div>
         </div>
 
-        <h2 style="margin-bottom: 20px;">📋 LE_BUTIN (Live Strikes)</h2>
-        <div id="leads-container">
-            <div class="loading">Loading real data from LE_BUTIN.json...</div>
+        <!-- Filters -->
+        <div class="filters">
+            <div class="filter-group">
+                <span class="filter-label">Status:</span>
+                <select id="filter-status" onchange="applyFilters()">
+                    <option value="all">All</option>
+                    <option value="PENDING_APPROVAL">Pending</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="VETOED">Vetoed</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Gap Type:</span>
+                <select id="filter-type" onchange="applyFilters()">
+                    <option value="all">All Types</option>
+                    <option value="loi_25">Law 25</option>
+                    <option value="bill_96">Bill 96</option>
+                    <option value="ccpa">CCPA</option>
+                    <option value="gdpr">GDPR</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Severity:</span>
+                <select id="filter-severity" onchange="applyFilters()">
+                    <option value="all">All</option>
+                    <option value="CRITICAL">Critical</option>
+                    <option value="HIGH">High</option>
+                    <option value="MEDIUM">Medium</option>
+                </select>
+            </div>
+            <div class="filter-group" style="margin-left: auto;">
+                <input type="text" id="search-input" placeholder="Search companies..." oninput="applyFilters()">
+            </div>
+        </div>
+
+        <!-- Leads Table -->
+        <div class="table-container">
+            <div class="table-header">
+                <span class="table-title">📋 LE_BUTIN - Active Strikes</span>
+                <span class="table-count" id="showing-count">Showing 0 leads</span>
+            </div>
+            <div id="table-content">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <span>Loading leads...</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" id="detail-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">🎯 Strike Details</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal()">Close</button>
+                <button class="btn btn-danger" onclick="vetoCurrent()">❌ Veto</button>
+                <button class="btn btn-primary" onclick="approveCurrent()">✅ Approve Strike</button>
+            </div>
         </div>
     </div>
 
-    <div class="status-bar">
-        <span><span class="status-indicator"></span> Sovereign Loop: <span id="loop-status">CONNECTING</span></span>
-        <span>Last Update: <span id="last-update">--</span></span>
-    </div>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
 
     <script>
+        // Data storage
+        let allLeads = [];
+        let filteredLeads = [];
+        let currentLead = null;
+        
+        // API endpoints (relative paths)
         const BUTIN_URL = '../hound_core/data/LE_BUTIN.json';
         const PENDING_URL = '../hound_core/data/pending_strikes.json';
-
+        const SETTLED_URL = '../hound_core/data/settled_strikes.json';
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            // Auto-refresh every 30 seconds
+            setInterval(loadData, 30000);
+        });
+        
+        // Format currency
         function formatCurrency(value) {
-            if (!value || value === '-') return '$0';
+            if (!value || value === 0) return '$0';
             return '$' + value.toLocaleString();
         }
-
+        
+        // Format date
         function formatDate(isoString) {
-            if (!isoString) return '--';
+            if (!isoString) return 'N/A';
             const date = new Date(isoString);
             return date.toLocaleString();
         }
-
-        function getSeverityClass(severity) {
-            return `severity-${severity || 'MEDIUM'}`;
-        }
-
-        function getStatusBadge(status) {
-            const classes = {
-                'PENDING_APPROVAL': 'status-PENDING',
-                'APPROVED': 'status-APPROVED',
-                'VETOED': 'status-VETOED'
-            };
-            const labels = {
-                'PENDING_APPROVAL': 'Pending',
-                'APPROVED': 'Approved',
-                'VETOED': 'Vetoed'
-            };
-            const cls = classes[status] || 'status-PENDING';
-            const label = labels[status] || status;
-            return `<span class="status-badge ${cls}">${label}</span>`;
-        }
-
+        
+        // Load data from JSON files
         async function loadData() {
-            document.getElementById('loop-status').textContent = 'LOADING';
-            document.getElementById('leads-container').innerHTML = '<div class="loading">Fetching real data...</div>';
-
             try {
-                // Try to fetch LE_BUTIN
+                updateStatus('Loading...', 'loading');
+                
+                // Fetch all data sources
+                const [butinRes, pendingRes, settledRes] = await Promise.all([
+                    fetch(BUTIN_URL + '?t=' + Date.now()).catch(() => null),
+                    fetch(PENDING_URL + '?t=' + Date.now()).catch(() => null),
+                    fetch(SETTLED_URL + '?t=' + Date.now()).catch(() => null)
+                ]);
+                
                 let butinData = null;
                 let pendingData = [];
-
-                try {
-                    const butinRes = await fetch(BUTIN_URL + '?t=' + Date.now());
-                    if (butinRes.ok) {
-                        butinData = await butinRes.json();
-                    }
-                } catch (e) {
-                    console.log('LE_BUTIN not found yet');
+                let settledData = [];
+                
+                if (butinRes && butinRes.ok) {
+                    butinData = await butinRes.json();
                 }
-
-                try {
-                    const pendingRes = await fetch(PENDING_URL + '?t=' + Date.now());
-                    if (pendingRes.ok) {
-                        pendingData = await pendingRes.json();
-                    }
-                } catch (e) {
-                    console.log('Pending strikes not found yet');
+                
+                if (pendingRes && pendingRes.ok) {
+                    pendingData = await pendingRes.json();
                 }
-
+                
+                if (settledRes && settledRes.ok) {
+                    settledData = await settledRes.json();
+                }
+                
+                // Use latest strikes from butin or pending
+                allLeads = butinData?.latest_strikes || pendingData || [];
+                
                 // Update stats
-                if (butinData) {
-                    document.getElementById('pending-count').textContent = butinData.pending_count || 0;
-                    document.getElementById('settled-count').textContent = butinData.settled_count || 0;
-                    document.getElementById('pipeline-value').textContent = formatCurrency(butinData.pipeline_value);
-                    document.getElementById('targets-hunted').textContent = butinData.targets_hunted || 0;
-                    document.getElementById('cycle-num').textContent = butinData.cycle || 0;
-                    document.getElementById('last-update').textContent = formatDate(butinData.timestamp);
-                } else {
-                    document.getElementById('pending-count').textContent = pendingData.length || 0;
-                    document.getElementById('pipeline-value').textContent = formatCurrency(
-                        pendingData.reduce((sum, p) => sum + (p.proposed_price || 0), 0)
-                    );
-                }
-
-                // Render leads
-                const leads = butinData?.latest_strikes || pendingData || [];
-                renderLeads(leads);
-
-                document.getElementById('loop-status').textContent = 'ONLINE';
-                document.getElementById('loop-status').style.color = '#00ff88';
-
+                updateStats(butinData, pendingData, settledData);
+                
+                // Apply filters and render
+                applyFilters();
+                
+                updateStatus('Online', 'online');
+                
             } catch (error) {
                 console.error('Error loading data:', error);
-                document.getElementById('leads-container').innerHTML = `
-                    <div class="error">
-                        <strong>Error loading data:</strong> ${error.message}<br><br>
-                        Make sure sovereign_loop.py has run at least once to create LE_BUTIN.json
-                    </div>
-                `;
-                document.getElementById('loop-status').textContent = 'ERROR';
-                document.getElementById('loop-status').style.color = '#ff4444';
+                updateStatus('Error', 'error');
+                showToast('Failed to load data. Check console.', 'error');
+                renderEmptyState();
             }
         }
-
-        function renderLeads(leads) {
-            const container = document.getElementById('leads-container');
-
-            if (!leads || leads.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <h3>📭 No strikes yet</h3>
-                        <p>Add targets to hound_core/data/targets.txt and run sovereign_loop.py</p>
-                    </div>
-                `;
+        
+        // Update statistics
+        function updateStats(butin, pending, settled) {
+            const pipelineValue = (pending || []).reduce((sum, p) => sum + (p.proposed_price || 0), 0);
+            const pendingCount = (pending || []).length;
+            const settledCount = (settled || []).length;
+            const criticalCount = (pending || []).filter(p => p.severity === 'CRITICAL').length;
+            
+            document.getElementById('pipeline-value').textContent = formatCurrency(pipelineValue);
+            document.getElementById('pending-count').textContent = pendingCount;
+            document.getElementById('settled-count').textContent = settledCount;
+            document.getElementById('critical-count').textContent = criticalCount;
+        }
+        
+        // Update system status
+        function updateStatus(text, type) {
+            const statusEl = document.getElementById('system-status');
+            const dotEl = document.querySelector('.status-dot');
+            
+            statusEl.textContent = text;
+            
+            if (type === 'online') {
+                dotEl.style.background = 'var(--primary)';
+            } else if (type === 'error') {
+                dotEl.style.background = 'var(--danger)';
+            } else {
+                dotEl.style.background = 'var(--warning)';
+            }
+        }
+        
+        // Apply filters
+        function applyFilters() {
+            const statusFilter = document.getElementById('filter-status').value;
+            const typeFilter = document.getElementById('filter-type').value;
+            const severityFilter = document.getElementById('filter-severity').value;
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            
+            filteredLeads = allLeads.filter(lead => {
+                if (statusFilter !== 'all' && lead.status !== statusFilter) return false;
+                if (typeFilter !== 'all' && lead.gap_type !== typeFilter) return false;
+                if (severityFilter !== 'all' && lead.severity !== severityFilter) return false;
+                if (searchTerm && !lead.company?.toLowerCase().includes(searchTerm)) return false;
+                return true;
+            });
+            
+            renderTable();
+            document.getElementById('showing-count').textContent = `Showing ${filteredLeads.length} leads`;
+        }
+        
+        // Render table
+        function renderTable() {
+            const container = document.getElementById('table-content');
+            
+            if (filteredLeads.length === 0) {
+                renderEmptyState();
                 return;
             }
-
-            const table = document.createElement('table');
-            table.className = 'leads-table';
-            table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Pack ID</th>
-                        <th>Company</th>
-                        <th>Gap Type</th>
-                        <th>Risk</th>
-                        <th>Price</th>
-                        <th>ROI</th>
-                        <th>Conf</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${leads.map(lead => `
+            
+            const html = `
+                <table>
+                    <thead>
                         <tr>
-                            <td><code>${lead.pack_id?.slice(0, 20) || 'N/A'}...</code></td>
-                            <td><strong>${lead.company || 'Unknown'}</strong></td>
-                            <td class="${getSeverityClass(lead.severity)}">${(lead.gap_type || 'unknown').toUpperCase()}</td>
-                            <td>${formatCurrency(lead.fine_risk)}</td>
-                            <td>${formatCurrency(lead.proposed_price)}</td>
-                            <td>${lead.roi_for_client || lead.roi || 'N/A'}</td>
-                            <td>${Math.round((lead.confidence || 0) * 100)}%</td>
-                            <td>${getStatusBadge(lead.status)}</td>
+                            <th class="sortable" onclick="sortBy('company')">Company</th>
+                            <th class="sortable" onclick="sortBy('gap_type')">Gap Type</th>
+                            <th class="sortable" onclick="sortBy('severity')">Severity</th>
+                            <th class="sortable" onclick="sortBy('fine_risk')">Risk</th>
+                            <th class="sortable" onclick="sortBy('proposed_price')">Price</th>
+                            <th>ROI</th>
+                            <th>Actions</th>
                         </tr>
-                    `).join('')}
-                </tbody>
+                    </thead>
+                    <tbody>
+                        ${filteredLeads.map(lead => `
+                            <tr onclick="showDetail('${lead.pack_id}')" style="cursor: pointer;">
+                                <td class="company-cell">${lead.company || 'Unknown'}</td>
+                                <td><span class="gap-type gap-${lead.gap_type}">${lead.gap_type?.toUpperCase().replace('_', ' ') || 'UNKNOWN'}</span></td>
+                                <td><span class="severity severity-${lead.severity?.toLowerCase()}">● ${lead.severity || 'MEDIUM'}</span></td>
+                                <td>${formatCurrency(lead.fine_risk)}</td>
+                                <td class="price">${formatCurrency(lead.proposed_price)}</td>
+                                <td>${lead.roi_for_client || lead.roi || 'N/A'}</td>
+                                <td class="actions" onclick="event.stopPropagation()">
+                                    <button class="btn" onclick="showDetail('${lead.pack_id}')">View</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
             `;
-
-            container.innerHTML = '';
-            container.appendChild(table);
+            
+            container.innerHTML = html;
         }
-
-        // Initial load
-        loadData();
-
-        // Auto-refresh every 30 seconds
-        setInterval(loadData, 30000);
+        
+        // Render empty state
+        function renderEmptyState() {
+            document.getElementById('table-content').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <h3>No leads found</h3>
+                    <p>Add targets to hound_core/data/targets.txt and run a hunt</p>
+                    <br>
+                    <button class="btn btn-primary" onclick="refreshData()">Refresh</button>
+                </div>
+            `;
+        }
+        
+        // Sort functionality
+        let sortField = null;
+        let sortDirection = 'desc';
+        
+        function sortBy(field) {
+            if (sortField === field) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortField = field;
+                sortDirection = 'desc';
+            }
+            
+            filteredLeads.sort((a, b) => {
+                let valA = a[field] || 0;
+                let valB = b[field] || 0;
+                
+                if (typeof valA === 'string') valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+                
+                if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+            
+            renderTable();
+        }
+        
+        // Show detail modal
+        function showDetail(packId) {
+            currentLead = allLeads.find(l => l.pack_id === packId);
+            if (!currentLead) return;
+            
+            const modalBody = document.getElementById('modal-body');
+            modalBody.innerHTML = `
+                <div class="detail-row">
+                    <span class="detail-label">Pack ID</span>
+                    <span class="detail-value"><code>${currentLead.pack_id}</code></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Company</span>
+                    <span class="detail-value">${currentLead.company}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Domain</span>
+                    <span class="detail-value">${currentLead.domain}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Gap Type</span>
+                    <span class="detail-value"><span class="gap-type gap-${currentLead.gap_type}">${currentLead.gap_type?.toUpperCase()}</span></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Description</span>
+                    <span class="detail-value" style="max-width: 300px; word-wrap: break-word;">${currentLead.gap_description}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Severity</span>
+                    <span class="detail-value severity severity-${currentLead.severity?.toLowerCase()}">${currentLead.severity}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Fine Risk</span>
+                    <span class="detail-value" style="color: var(--danger); font-weight: 600;">${formatCurrency(currentLead.fine_risk)}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Proposed Price</span>
+                    <span class="detail-value" style="color: var(--primary); font-weight: 600;">${formatCurrency(currentLead.proposed_price)}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">ROI for Client</span>
+                    <span class="detail-value">${currentLead.roi_for_client || currentLead.roi}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Jurisdiction</span>
+                    <span class="detail-value">${currentLead.jurisdiction}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Confidence</span>
+                    <span class="detail-value">${Math.round((currentLead.confidence || 0) * 100)}%</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Found At</span>
+                    <span class="detail-value">${formatDate(currentLead.found_at)}</span>
+                </div>
+                <div class="detail-row" style="border-bottom: none;">
+                    <span class="detail-label">Evidence</span>
+                    <span class="detail-value" style="font-size: 0.875rem; color: var(--text-muted);">${currentLead.evidence}</span>
+                </div>
+            `;
+            
+            document.getElementById('detail-modal').classList.add('active');
+        }
+        
+        // Close modal
+        function closeModal() {
+            document.getElementById('detail-modal').classList.remove('active');
+            currentLead = null;
+        }
+        
+        // Approve current lead
+        function approveCurrent() {
+            if (!currentLead) return;
+            
+            // In real implementation, this would call an API
+            showToast(`✅ Approved strike for ${currentLead.company}`, 'success');
+            closeModal();
+            
+            // Update local state
+            currentLead.status = 'APPROVED';
+            applyFilters();
+        }
+        
+        // Veto current lead
+        function vetoCurrent() {
+            if (!currentLead) return;
+            
+            showToast(`❌ Vetoed strike for ${currentLead.company}`, 'error');
+            closeModal();
+            
+            // Update local state
+            currentLead.status = 'VETOED';
+            applyFilters();
+        }
+        
+        // Refresh data
+        function refreshData() {
+            showToast('Refreshing data...', 'success');
+            loadData();
+        }
+        
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+        
+        // Close modal on overlay click
+        document.getElementById('detail-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'detail-modal') {
+                closeModal();
+            }
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+            if (e.key === 'r' && e.ctrlKey) {
+                e.preventDefault();
+                refreshData();
+            }
+        });
     </script>
 </body>
 </html>
