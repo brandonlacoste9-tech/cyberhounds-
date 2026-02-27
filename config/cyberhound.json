@@ -1,0 +1,26 @@
+{
+  "name": "Cyberhound-Web",
+  "version": "1.0.0",
+  "description": "B2B website and dashboard - connects to main Cyberhound system",
+  "connection": {
+    "main_system_path": "~/Cyberhound",
+    "api_protocol": "subprocess",
+    "data_file": "~/Cyberhound/LE_BUTIN.json",
+    "modules": {
+      "sovereign_loop": "~/Cyberhound/sovereign_loop.py",
+      "scout_http": "~/Cyberhound/scout_http.py",
+      "forge_engine": "~/Cyberhound/forge_engine.py",
+      "envoy_bot": "~/Cyberhound/envoy_bot.py"
+    }
+  },
+  "deployment": {
+    "primary": "vercel",
+    "backup": "railway",
+    "local": "localhost:8000"
+  },
+  "security": {
+    "note": "This website is SEPARATE from the hunting system",
+    "isolation": "Website cannot modify core hunting code",
+    "communication": "Via API calls and shared data files only"
+  }
+}

@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyberhound | Autonomous Problem Solvers</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #d4af37;
+            --gold-dark: #b8941f;
+            --bg: #0a0a0f;
+            --bg-light: #12121a;
+            --text: #e0e0e0;
+            --text-muted: #6b7280;
+            --red: #ef4444;
+            --green: #10b981;
+            --blue: #3b82f6;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+        }
+        
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+            z-index: 1000;
+            padding: 1rem 0;
+        }
+        
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--gold);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+        
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover { color: var(--gold); }
+        
+        .nav-cta {
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+            color: var(--bg) !important;
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+        }
+        
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 8rem 2rem 4rem;
+            position: relative;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .hero-content { max-width: 900px; position: relative; z-index: 1; }
+        
+        .hero-badge {
+            display: inline-block;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 0.5rem 1rem;
+            border-radius: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--gold);
+            margin-bottom: 2rem;
+        }
+        
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff 0%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+        
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 1rem 2rem;
+            font-weight: 700;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+            color: var(--bg);
+            box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(212, 175, 55, 0.4);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--text);
+            border: 2px solid rgba(212, 175, 55, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        
+        .dashboard-preview {
+            background: var(--bg-light);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 4rem;
+            text-align: left;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .hunt-item {
+            background: rgba(10, 10, 15, 0.8);
+            border-left: 3px solid var(--gold);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 0 6px 6px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .hunt-item.high { border-left-color: var(--red); }
+        .hunt-item.medium { border-left-color: var(--gold); }
+        .hunt-item.low { border-left-color: var(--green); }
+        
+        .hunt-title { font-weight: 600; }
+        .hunt-value { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+        
+        .features {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .section-title h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #fff;
+        }
+        
+        .section-title p {
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature-card {
+            background: var(--bg-light);
+            border: 1px solid rgba(212, 175, 55, 0.1);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+        
+        .feature-card:hover {
+            border-color: rgba(212, 175, 55, 0.3);
+            transform: translateY(-4px);
+        }
+        
+        .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+        .feature-card h3 { font-size: 1.25rem; margin-bottom: 0.5rem; color: #fff; }
+        .feature-card p { color: var(--text-muted); font-size: 0.95rem; }
+        
+        .stats {
+            background: var(--bg-light);
+            padding: 4rem 2rem;
+            border-top: 1px solid rgba(212, 175, 55, 0.1);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+        }
+        
+        .stats-grid {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 0.5rem;
+        }
+        
+        .how-it-works {
+            padding: 6rem 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .steps { display: flex; flex-direction: column; gap: 3rem; }
+        
+        .step {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+        
+        .step-number {
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+            color: var(--bg);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        
+        .step-content h3 { font-size: 1.5rem; margin-bottom: 0.5rem; color: #fff; }
+        .step-content p { color: var(--text-muted); }
+        
+        .cta {
+            padding: 6rem 2rem;
+            text-align: center;
+            background: radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+        }
+        
+        .cta h2 { font-size: 2.5rem; margin-bottom: 1rem; color: #fff; }
+        .cta p { color: var(--text-muted); max-width: 500px; margin: 0 auto 2rem; }
+        
+        footer {
+            background: var(--bg-light);
+            padding: 3rem 2rem;
+            text-align: center;
+            border-top: 1px solid rgba(212, 175, 55, 0.1);
+        }
+        
+        footer p { color: var(--text-muted); font-size: 0.875rem; }
+        
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero h1 { font-size: 2rem; }
+            .hero-cta { flex-direction: column; width: 100%; }
+            .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <span>🐺</span> CYBERHOUND
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#" class="nav-cta">Launch Hunt</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">⚡ AUTONOMOUS PROBLEM SOLVERS</div>
+            <h1>We Hunt Problems.<br>You Approve Solutions.</h1>
+            <p>Cyberhound deploys 20 autonomous agents across North & South America to find high-value compliance gaps and business opportunities.</p>
+            <div class="hero-cta">
+                <a href="#" class="btn btn-primary">Enter Command Center</a>
+                <a href="#how-it-works" class="btn btn-secondary">Learn More</a>
+            </div>
+            
+            <div class="dashboard-preview">
+                <div class="dashboard-header">
+                    <div style="color: var(--gold); font-weight: 800;">⚡ LIVE HUNT FEED</div>
+                    <div class="status-indicator">
+                        <span class="status-dot"></span>
+                        <span style="color: var(--green);">20 HOUNDS ACTIVE</span>
+                    </div>
+                </div>
+                <div class="hunt-item high">
+                    <div>
+                        <div class="hunt-title">TechCorp Montreal - GDPR Gap</div>
+                        <div style="font-size: 0.875rem; color: var(--text-muted);">🔴 HIGH | Compliance | Quebec</div>
+                    </div>
+                    <div class="hunt-value">$5,000</div>
+                </div>
+                <div class="hunt-item medium">
+                    <div>
+                        <div class="hunt-title">AutoShop Quebec - Privacy Policy Missing</div>
+                        <div style="font-size: 0.875rem; color: var(--text-muted);">🟡 MED | Law 25 | Laval</div>
+                    </div>
+                    <div class="hunt-value">$2,500</div>
+                </div>
+                <div class="hunt-item high">
+                    <div>
+                        <div class="hunt-title">Stingray Digital - AI Disclosure Gap</div>
+                        <div style="font-size: 0.875rem; color: var(--text-muted);">🔴 HIGH | Bill 96 | Montreal</div>
+                    </div>
+                    <div class="hunt-value">$8,500</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats">
+        <div class="stats-grid">
+            <div>
+                <div class="stat-value">$2.4M</div>
+                <div class="stat-label">Problems Found</div>
+            </div>
+            <div>
+                <div class="stat-value">847</div>
+                <div class="stat-label">Strikes Closed</div>
+            </div>
+            <div>
+                <div class="stat-value">20</div>
+                <div class="stat-label">Active Hounds</div>
+            </div>
+            <div>
+                <div class="stat-value">94%</div>
+                <div class="stat-label">Success Rate</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <div class="section-title">
+            <h2>The Sovereign Loop</h2>
+            <p>Human-on-the-Loop architecture. You command. We execute.</p>
+        </div>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🐺</div>
+                <h3>20-Hound Swarm</h3>
+                <p>Parallel agents scouring Alaska to Argentina 24/7/365.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <h3>Ralph AI Engine</h3>
+                <p>Self-healing intelligence that analyzes and forges solutions.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>Mobile Command</h3>
+                <p>Review Decision Packs on your phone. Tap ✅ to strike.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>IronClaw Execution</h3>
+                <p>Rust-based secure PTY bridges for contractor deployment.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <h3>Compliance First</h3>
+                <p>Law 25, GDPR, Bill 96. The gaps others miss.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💰</div>
+                <h3>Revenue Automation</h3>
+                <p>Hunt to close in 48 hours. You keep 100%.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works" id="how-it-works">
+        <div class="section-title">
+            <h2>How The Empire Hunts</h2>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>The Scout</h3>
+                    <p>20 autonomous agents deploy across the Americas, scanning for compliance gaps and technical debt.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>The Forge</h3>
+                    <p>Ralph AI analyzes findings, identifies violations, and forges complete solution packages.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>The Command</h3>
+                    <p>You receive a Decision Pack. Review, then tap ✅ to approve, ❌ to veto, or 💬 to ask.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>The Strike</h3>
+                    <p>IronClaw deploys the fix. You monitor from mobile. Revenue settles automatically.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <h2>Ready to Deploy Your Swarm?</h2>
+        <p>The empire awaits your command.</p>
+        <div class="hero-cta" style="margin-top: 2rem;">
+            <a href="#" class="btn btn-primary">Access Command Center</a>
+            <a href="#" class="btn btn-secondary">Open Telegram Bot</a>
+        </div>
+    </section>
+
+    <footer>
+        <p>🐺 Cyberhound | The IronClaw Empire</p>
+        <p style="margin-top: 0.5rem; font-size: 0.75rem;">From Alaska to Argentina. Technical debt to compliance gold.</p>
+    </footer>
+
+    <script>
+        const problems = [
+            { name: 'RetailCorp', issue: 'GDPR Data Residency', severity: 'high', value: '$6,500', location: 'Toronto' },
+            { name: 'LogiTrans', issue: 'Missing AI Disclosure', severity: 'medium', value: '$3,200', location: 'Vancouver' },
+            { name: 'MediCare Plus', issue: 'Law 25 Compliance Gap', severity: 'high', value: '$12,000', location: 'Montreal' },
+        ];
+        
+        setInterval(() => {
+            const problem = problems[Math.floor(Math.random() * problems.length)];
+            const feed = document.querySelector('.dashboard-preview');
+            const newHunt = document.createElement('div');
+            newHunt.className = `hunt-item ${problem.severity}`;
+            newHunt.innerHTML = `
+                <div>
+                    <div class="hunt-title">${problem.name} - ${problem.issue}</div>
+                    <div style="font-size: 0.875rem; color: var(--text-muted);">${problem.severity === 'high' ? '🔴' : '🟡'} ${problem.severity.toUpperCase()} | ${problem.location}</div>
+                </div>
+                <div class="hunt-value">${problem.value}</div>
+            `;
+            const items = feed.querySelectorAll('.hunt-item');
+            if (items.length > 3) items[items.length - 1].remove();
+            feed.insertBefore(newHunt, feed.children[1]);
+        }, 5000);
+    </script>
+</body>
+</html>
