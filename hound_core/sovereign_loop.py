@@ -2,9 +2,7 @@
 """
 🐺 CYBERHOUND SOVEREIGN LOOP v2.0
 B2B Compliance Hunting with Human-on-the-Loop (HOTL)
-
-The master controller for autonomous enterprise compliance gap hunting.
-Targets: $5K-25K deals (Loi 25, Bill 96, Article 34)
+REAL leads only - no simulation.
 """
 
 import asyncio
@@ -13,33 +11,103 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional
-import aiohttp
+
+from swarm import Swarm, Lead
 
 # Configuration
 CYCLE_INTERVAL_SECONDS = 30 * 60  # 30 minutes between hunts
-TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN"
-TELEGRAM_CHAT_ID = "YOUR_CHAT_ID"
-
-# Data persistence
 DATA_DIR = Path(__file__).parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 BUTIN_PATH = DATA_DIR / "LE_BUTIN.json"
 PENDING_PATH = DATA_DIR / "pending_strikes.json"
 SETTLED_PATH = DATA_DIR / "settled_strikes.json"
+TARGETS_FILE = DATA_DIR / "targets.txt"
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(name)s | %(levelname)s | %(message)s'
+)
 logger = logging.getLogger("Sovereign")
 
 
+class DecisionPack:
+    """A forged deal ready for executive approval."""
+    
+    def __init__(self, lead: Lead):
+        self.pack_id = f"PACK_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{lead.company[:8].upper()}"
+        self.lead = lead
+        self.forge_timestamp = datetime.now().isoformat()
+        
+        # Calculate pricing based on risk
+        self._calculate_price()
+    
+    def _calculate_price(self):
+        """Price the deal based on severity and risk."""
+        if self.lead.severity == "CRITICAL":
+            base_price = min(25000, self.lead.fine_risk * 0.1)
+        elif self.lead.severity == "HIGH":
+            base_price = min(18000, self.lead.fine_risk * 0.15)
+        else:
+            base_price = min(12000, self.lead.fine_risk * 0.2)
+        
+        self.proposed_price = int(base_price)
+        self.roi = f"{self.lead.fine_risk / self.proposed_price:.1f}x"
+    
+    def to_dict(self) -> Dict:
+        return {
+            "pack_id": self.pack_id,
+            "company": self.lead.company,
+            "domain": self.lead.domain,
+            "gap_type": self.lead.gap_type,
+            "gap_description": self.lead.description,
+            "fine_risk": self.lead.fine_risk,
+            "severity": self.lead.severity,
+            "proposed_price": self.proposed_price,
+            "roi_for_client": self.roi,
+            "jurisdiction": self.lead.jurisdiction,
+            "evidence": self.lead.evidence,
+            "confidence": self.lead.confidence,
+            "found_at": self.lead.found_at,
+            "forged_at": self.forge_timestamp,
+            "status": "PENDING_APPROVAL"
+        }
+
+
 class SovereignLoop:
-    """Master controller for B2B compliance hunting."""
+    """Master controller for REAL B2B compliance hunting."""
     
     def __init__(self):
-        self.scouts = []
-        self.pending_strikes = []
-        self.settled_strikes = []
+        self.swarm = Swarm()
+        self.pending_strikes: List[Dict] = []
+        self.settled_strikes: List[Dict] = []
         self.load_data()
+        self._ensure_targets_file()
+    
+    def _ensure_targets_file(self):
+        """Create targets file if it doesn't exist."""
+        if not TARGETS_FILE.exists():
+            default_targets = """# Add B2B prospect domains here (one per line)
+# Example:
+# fintech-startup.com
+# healthapp.io
+# saas-company.ca
+"""
+            TARGETS_FILE.write_text(default_targets)
+            logger.info(f"📝 Created {TARGETS_FILE} - add your targets there")
+    
+    def load_targets(self) -> List[str]:
+        """Load target domains from file."""
+        if not TARGETS_FILE.exists():
+            return []
         
+        lines = TARGETS_FILE.read_text().strip().split('\n')
+        targets = [
+            line.strip() 
+            for line in lines 
+            if line.strip() and not line.startswith('#')
+        ]
+        return targets
+    
     def load_data(self):
         """Load persisted hunting data."""
         if PENDING_PATH.exists():
@@ -56,176 +124,174 @@ class SovereignLoop:
         with open(SETTLED_PATH, 'w') as f:
             json.dump(self.settled_strikes, f, indent=2)
     
-    async def run_scout(self, jurisdiction: str) -> List[Dict]:
+    async def run_hunt_cycle(self) -> List[DecisionPack]:
         """
-        Deploy scout hounds to find compliance gaps.
-        Returns: List of raw leads
+        Run one complete hunt cycle:
+        1. Load targets
+        2. Deploy swarm
+        3. Forge Decision Packs
+        4. Queue for approval
         """
-        logger.info(f"🐺 Deploying scouts to {jurisdiction}")
+        targets = self.load_targets()
         
-        # Scout hounds search for compliance gaps
-        scouts = [
-            self._scout_loi25(jurisdiction),
-            self._scout_bill96(jurisdiction),
-            self._scout_article34(jurisdiction),
-        ]
+        if not targets:
+            logger.warning("⚠️  No targets in targets.txt - add domains to hunt")
+            return []
         
-        results = await asyncio.gather(*scouts, return_exceptions=True)
-        leads = []
-        for r in results:
-            if isinstance(r, list):
-                leads.extend(r)
+        logger.info(f"🎯 Hunting {len(targets)} targets")
         
-        logger.info(f"📊 Scouts returned {len(leads)} leads from {jurisdiction}")
-        return leads
-    
-    async def _scout_loi25(self, jurisdiction: str) -> List[Dict]:
-        """Scout for Quebec Law 25 compliance gaps."""
-        # Simulated - replace with actual scraping
-        return [{
-            "type": "loi_25_gap",
-            "company": "Example Corp",
-            "gap": "Missing data protection officer",
-            "fine_risk": 25000,
-            "jurisdiction": jurisdiction,
-            "found_at": datetime.now().isoformat()
-        }]
-    
-    async def _scout_bill96(self, jurisdiction: str) -> List[Dict]:
-        """Scout for Quebec Bill 96 AI disclosure gaps."""
-        return [{
-            "type": "bill_96_gap",
-            "company": "AI Startup Inc",
-            "gap": "AI system not disclosed to users",
-            "fine_risk": 50000,
-            "jurisdiction": jurisdiction,
-            "found_at": datetime.now().isoformat()
-        }]
-    
-    async def _scout_article34(self, jurisdiction: str) -> List[Dict]:
-        """Scout for Article 34 data breach gaps."""
-        return [{
-            "type": "article_34_gap",
-            "company": "Fintech Co",
-            "gap": "72-hour breach notification not implemented",
-            "fine_risk": 20000,
-            "jurisdiction": jurisdiction,
-            "found_at": datetime.now().isoformat()
-        }]
-    
-    async def run_forge(self, lead: Dict) -> Optional[Dict]:
-        """
-        Forge a Decision Pack from a raw lead.
-        Ralph AI analyzes and prices the deal.
-        """
-        logger.info(f"🔨 Forging Decision Pack for {lead['company']}")
+        all_packs = []
         
-        # Analyze gap severity
-        severity = "HIGH" if lead['fine_risk'] > 30000 else "MEDIUM"
+        for target in targets:
+            # Deploy swarm on this target
+            leads = await self.swarm.hunt_target(target)
+            
+            # Forge Decision Packs for each lead
+            for lead in leads:
+                pack = DecisionPack(lead)
+                all_packs.append(pack)
+                
+                # Add to pending
+                self.pending_strikes.append(pack.to_dict())
+                
+                # Log the strike
+                logger.info(f"🔨 FORGED: {pack.pack_id}")
+                logger.info(f"   Company: {pack.lead.company}")
+                logger.info(f"   Gap: {pack.lead.description[:60]}...")
+                logger.info(f"   Price: ${pack.proposed_price:,} | ROI: {pack.roi}")
+            
+            # Small delay between targets
+            await asyncio.sleep(2)
         
-        # Price the solution
-        if severity == "HIGH":
-            price = min(25000, lead['fine_risk'] * 0.5)
-        else:
-            price = min(15000, lead['fine_risk'] * 0.6)
-        
-        pack = {
-            "pack_id": f"PACK_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{lead['company'][:8].upper()}",
-            "company": lead['company'],
-            "gap_type": lead['type'],
-            "gap_description": lead['gap'],
-            "fine_risk": lead['fine_risk'],
-            "severity": severity,
-            "proposed_price": int(price),
-            "roi_for_client": f"{lead['fine_risk'] / price:.1f}x",
-            "jurisdiction": lead['jurisdiction'],
-            "found_at": lead['found_at'],
-            "status": "PENDING_APPROVAL",
-            "decision_buttons": ["✅ APPROVE", "❌ VETO", "❓ ASK"]
-        }
-        
-        return pack
-    
-    async def send_decision_pack(self, pack: Dict):
-        """Send Decision Pack to Telegram for HOTL approval."""
-        message = f"""
-🚨 **COMPLIANCE GAP DETECTED**
-
-**Company:** {pack['company']}
-**Gap:** {pack['gap_description']}
-**Risk:** ${pack['fine_risk']:,} fine exposure
-**Severity:** {pack['severity']}
-
-💰 **PROPOSED STRIKE:**
-Price: ${pack['proposed_price']:,}
-ROI for Client: {pack['roi_for_client']} cost avoidance
-
-📍 {pack['jurisdiction']} | Pack ID: `{pack['pack_id']}`
-
-Reply with:
-✅ APPROVE - Fire the strike
-❌ VETO - Discard this lead
-❓ ASK - Get more intel
-        """
-        
-        logger.info(f"📱 Sent Decision Pack {pack['pack_id']} to Telegram")
-        # TODO: Implement actual Telegram bot send
-        print(message)
-        
-        # Add to pending
-        self.pending_strikes.append(pack)
         self.save_data()
+        return all_packs
     
-    async def poll_telegram_for_commands(self):
-        """Poll Telegram for executive commands."""
-        # TODO: Implement actual Telegram polling
-        logger.info("📱 Polling Telegram for commands...")
-        await asyncio.sleep(1)
+    def print_strike_board(self, packs: List[DecisionPack]):
+        """Print summary of forged strikes."""
+        if not packs:
+            logger.info("📭 No strikes forged this cycle")
+            return
+        
+        print("\n" + "="*70)
+        print("🐺 STRIKE BOARD - Ready for Deployment")
+        print("="*70)
+        
+        total_value = sum(p.proposed_price for p in packs)
+        total_risk = sum(p.lead.fine_risk for p in packs)
+        
+        print(f"\n📊 SUMMARY:")
+        print(f"   Strikes Forged: {len(packs)}")
+        print(f"   Pipeline Value: ${total_value:,}")
+        print(f"   Client Risk Avoided: ${total_risk:,}")
+        
+        print(f"\n📋 PENDING APPROVAL:")
+        for pack in packs:
+            status_emoji = "🔴" if pack.lead.severity == "CRITICAL" else "🟠" if pack.lead.severity == "HIGH" else "🟡"
+            print(f"\n   {status_emoji} {pack.pack_id}")
+            print(f"      {pack.lead.company} | {pack.lead.gap_type.upper()}")
+            print(f"      ${pack.proposed_price:,} deal | {pack.roi} ROI | {pack.lead.confidence:.0%} confidence")
+        
+        print("\n💬 Approve via Telegram or update pending_strikes.json")
+        print("="*70 + "\n")
     
     async def sovereign_loop(self):
         """Main hunting loop - runs forever."""
-        logger.info("👑 SOVEREIGN LOOP ACTIVATED")
-        logger.info("🐺 Cyberhound B2B Compliance Hunter Online")
+        logger.info("="*70)
+        logger.info("🐺 CYBERHOUND SOVEREIGN LOOP v2.0")
+        logger.info("   B2B Compliance Hunting | Human-on-the-Loop")
+        logger.info("   REAL scrapers | NO simulated data")
+        logger.info("="*70)
         
-        jurisdictions = ["Quebec", "California", "EU-GDPR", "Korea-PIPA"]
+        targets = self.load_targets()
+        logger.info(f"📁 Loaded {len(targets)} targets from targets.txt")
         
+        if not targets:
+            logger.error("❌ No targets configured! Add domains to data/targets.txt")
+            return
+        
+        cycle = 0
         while True:
-            logger.info(f"\n🔄 Starting hunt cycle at {datetime.now().isoformat()}")
+            cycle += 1
+            logger.info(f"\n{'='*70}")
+            logger.info(f"🔄 HUNT CYCLE #{cycle} | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            logger.info(f"{'='*70}")
             
-            all_leads = []
+            try:
+                # Run the hunt
+                packs = await self.run_hunt_cycle()
+                
+                # Display results
+                self.print_strike_board(packs)
+                
+                # Update LE_BUTIN
+                butin = {
+                    "cycle": cycle,
+                    "timestamp": datetime.now().isoformat(),
+                    "targets_hunted": len(targets),
+                    "strikes_forged": len(packs),
+                    "pending_count": len(self.pending_strikes),
+                    "settled_count": len(self.settled_strikes),
+                    "pipeline_value": sum(p['proposed_price'] for p in self.pending_strikes),
+                    "latest_strikes": [p.to_dict() for p in packs]
+                }
+                
+                with open(BUTIN_PATH, 'w') as f:
+                    json.dump(butin, f, indent=2)
+                
+                logger.info(f"💾 LE_BUTIN updated: {BUTIN_PATH}")
+                
+            except Exception as e:
+                logger.error(f"❌ Hunt cycle failed: {e}")
             
-            # Deploy scouts to all jurisdictions in parallel
-            scout_tasks = [self.run_scout(j) for j in jurisdictions]
-            results = await asyncio.gather(*scout_tasks)
-            
-            for leads in results:
-                all_leads.extend(leads)
-            
-            logger.info(f"🎯 Total leads found: {len(all_leads)}")
-            
-            # Forge Decision Packs for each lead
-            for lead in all_leads:
-                pack = await self.run_forge(lead)
-                if pack:
-                    await self.send_decision_pack(pack)
-            
-            # Check for executive commands
-            await self.poll_telegram_for_commands()
-            
-            # Save butin
-            butin = {
-                "cycle": datetime.now().isoformat(),
-                "pending": len(self.pending_strikes),
-                "settled": len(self.settled_strikes),
-                "leads": all_leads
-            }
-            with open(BUTIN_PATH, 'w') as f:
-                json.dump(butin, f, indent=2)
-            
-            logger.info(f"💤 Sleeping {CYCLE_INTERVAL_SECONDS/60} minutes...")
+            # Sleep until next cycle
+            logger.info(f"💤 Sleeping {CYCLE_INTERVAL_SECONDS/60} minutes until next hunt...")
             await asyncio.sleep(CYCLE_INTERVAL_SECONDS)
 
 
-if __name__ == "__main__":
+async def quick_hunt(domains: List[str]):
+    """One-off hunt for specific domains."""
+    logger.info("🐺 QUICK HUNT MODE")
+    
     sovereign = SovereignLoop()
-    asyncio.run(sovereign.sovereign_loop())
+    
+    # Temporarily override targets
+    sovereign.swarm = Swarm()
+    
+    all_packs = []
+    for domain in domains:
+        leads = await sovereign.swarm.hunt_target(domain)
+        for lead in leads:
+            pack = DecisionPack(lead)
+            all_packs.append(pack)
+    
+    sovereign.print_strike_board(all_packs)
+    
+    # Save to LE_BUTIN
+    butin = {
+        "mode": "quick_hunt",
+        "timestamp": datetime.now().isoformat(),
+        "targets": domains,
+        "strikes": [p.to_dict() for p in all_packs]
+    }
+    
+    DATA_DIR.mkdir(exist_ok=True)
+    with open(BUTIN_PATH, 'w') as f:
+        json.dump(butin, f, indent=2)
+    
+    logger.info(f"💾 Results saved to {BUTIN_PATH}")
+
+
+if __name__ == "__main__":
+    import sys
+    
+    if len(sys.argv) > 1 and sys.argv[1] == "--quick":
+        # Quick hunt mode: python sovereign_loop.py --quick domain1.com domain2.com
+        domains = sys.argv[2:]
+        if domains:
+            asyncio.run(quick_hunt(domains))
+        else:
+            print("Usage: python sovereign_loop.py --quick domain1.com domain2.com")
+    else:
+        # Full sovereign loop
+        sovereign = SovereignLoop()
+        asyncio.run(sovereign.sovereign_loop())
